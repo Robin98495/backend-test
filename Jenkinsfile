@@ -22,6 +22,9 @@ pipeline {
         stage('Run Tests') {
             steps {
                 powershell '''
+                    Write-Output "Installing dependencies..."
+                    npm install
+
                     Write-Output "Running tests..."
                     npm test
                 '''
