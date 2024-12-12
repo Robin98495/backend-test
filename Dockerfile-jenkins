@@ -24,6 +24,4 @@ RUN apt-get update && apt-get install -y passwd && \
     groupadd -g 999 docker || true && \
     usermod -aG docker jenkins
 USER jenkins
-RUN usermod -aG docker jenkins
-
-
+RUN usermod -aG docker jenkins
