@@ -65,9 +65,13 @@ stages{
             steps{
                 script(){
                     docker.withRegistry("http://localhost:8081", "registry"){
-                        sh 'docker build -t backend-test-robinson .'
-                        sh 'docker tag backend-test localhost:8081/backend-test-robinson'
-                        sh 'docker tag backend-test localhost:8081/backend-test-robinson'
+                        // sh 'docker build -t backend-test-robinson .'
+                        // sh 'docker tag backend-test localhost:8081/backend-test-robinson'
+                        // sh 'docker tag backend-test localhost:8081/backend-test-robinson'
+
+                        sh 'docker build -t backend-devops .'
+                        sh 'docker tag backend-devops:latest localhost:8082/backend-devops:latest'
+                        // sh 'docker push localhost:8082/backend-devops:latest'
                     }
                 }                
             }
