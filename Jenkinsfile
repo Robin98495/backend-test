@@ -1,10 +1,10 @@
 pipeline {
     agent any
-    environment {
-    SONAR_TOKEN = credentials('sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d')
-    DOCKER_REGISTRY = 'http://localhost:8081/' 
-    DOCKER_CREDENTIALS = credentials('sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d')
-    } 
+    // environment {
+    // SONAR_TOKEN = credentials('sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d')
+    // DOCKER_REGISTRY = 'http://localhost:8081/' 
+    // DOCKER_CREDENTIALS = credentials('sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d')
+    // } 
 stages{
         stage("Instalación de dependencias"){
             agent {

@@ -20,8 +20,20 @@ RUN apt update
 RUN apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 RUN apt-get clean
 RUN gpasswd -a jenkins docker
-RUN apt-get update && apt-get install -y passwd && \
-    groupadd -g 999 docker || true && \
-    usermod -aG docker jenkins
-USER jenkins
+# RUN apt-get update && apt-get install -y passwd && \
+#     groupadd -g 999 docker || true && \
+#     usermod -aG docker jenkins
+# USER jenkins
+# RUN usermod -aG docker jenkins
+
+# Actualizar paquetes e instalar 'passwd'
+RUN apt-get update && apt-get install -y passwd
+
+# Crear el grupo docker si no existe
+RUN groupadd -g 999 docker || true
+
+# Agregar el usuario 'jenkins' al grupo 'docker' como root
 RUN usermod -aG docker jenkins
+
+# Cambiar al usuario jenkins
+USER jenkins
