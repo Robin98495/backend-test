@@ -1,88 +1,76 @@
 pipeline {
     agent any
-    // environment {
-    //     SONAR_TOKEN = credentials('sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d')
-    //     DOCKER_REGISTRY = 'http://localhost:8081/' 
-    //     DOCKER_CREDENTIALS = credentials('sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d')
-    // }
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-        stage('Install Dependencies') {
-            steps {
-                powershell '''
-                    Write-Output "Installing dependencies..."
-                    npm install
-                '''
-            }
-        }
-        stage('Run Tests') {
-            steps {
-                powershell '''
-                    Write-Output "Installing dependencies..."
-                    npm install
-
-                    Write-Output "Running tests..."
-                    npm test
-                '''
-            }
-        }
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    powershell '''
-                        Write-Output "Running SonarQube analysis..."
-                        sonar-scanner -Dsonar.projectKey=backend-test `
-                                      -Dsonar.sources=. `
-                                      -Dsonar.host.url=${SONAR_HOST_URL} `
-                                      -Dsonar.login=${SONAR_TOKEN}
-                    '''
+    environment {
+    SONAR_TOKEN = credentials('sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d')
+    DOCKER_REGISTRY = 'http://localhost:8081/' 
+    DOCKER_CREDENTIALS = credentials('sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d')
+    } 
+stages{
+        stage("Instalación de dependencias"){
+            agent {
+                docker {
+                    image 'node:22-alpine'
+                    reuseNode true
                 }
             }
+            stages{
+                stage ("Build - instalación dependencias"){
+                    steps{
+                        sh 'npm install'
+                    }
+                }
+                stage("Testing"){
+                    steps{
+                        sh 'npm run test'
+                    }
+                }
+                stage("Build del proyecto"){
+                    steps{
+                        sh 'npm run build'
+                    }
+                }
+            }            
         }
-        stage('Quality Gate') {
-            steps {
-                script {
-                    def qg = waitForQualityGate()
-                    if (qg.status != 'OK') {
-                        error "Pipeline aborted due to quality gate failure: ${qg.status}"
+        stage("Quality Assurance"){
+            agent {
+                docker {
+                    label 'contenedores'
+                    image 'sonarsource/sonar-scanner-cli'
+                    args '--network=devops-infra_default'
+                    reuseNode true
+                }
+            }
+            stages{
+                stage('Quality assurance - Paso Sonarqube (Scanner)') {
+                    steps { withSonarQubeEnv('sonarqube') {
+                        sh 'sonar-scanner' 
+                        } 
+                    } 
+                }
+                stage("Quality assurance - Paso puerta de calidad"){
+                    steps{
+                        script{
+                            timeout(time: 10, unit: 'MINUTES'){
+                                def qg = waitForQualityGate()
+                                if (qg.status != 'OK'){
+                                    error "Pipeline abortado debido a falla de puerta de calidad: ${qg.status}"
+                                }
+                            }                            
+                        }
                     }
                 }
             }
         }
-        stage('Build Docker Image') {
-            steps {
-                powershell '''
-                    Write-Output "Building Docker image..."
-                    docker build -t ${DOCKER_REGISTRY}/backend-test:latest .
-                '''
-            }
-        }
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    def buildNumber = env.BUILD_NUMBER
-                    withDockerRegistry([credentialsId: 'sqp_7f124a2ffd0c4621f551dbbabd5debfda324220d', url: "https://${DOCKER_REGISTRY}"]) {
-                        powershell '''
-                            Write-Output "Pushing Docker image with tag 'latest'..."
-                            docker push ${DOCKER_REGISTRY}/backend-test:latest
-                        '''
-                        powershell '''
-                            Write-Output "Tagging and pushing Docker image with build number..."
-                            docker tag ${DOCKER_REGISTRY}/backend-test:latest ${DOCKER_REGISTRY}/backend-test:${buildNumber}
-                            docker push ${DOCKER_REGISTRY}/backend-test:${buildNumber}
-                        '''
+        stage("Imagen docker nexus"){
+            steps{
+                script(){
+                    docker.withRegistry("http://localhost:8081", "registry"){
+                        sh 'docker build -t backend-test-robinson .'
+                        sh 'docker tag backend-test localhost:8081/backend-test-robinson'
+                        sh 'docker tag backend-test localhost:8081/backend-test-robinson'
                     }
-                }
+                }                
             }
-        }
-    }
-    post {
-        always {
-            cleanWs()
         }
     }
 }
