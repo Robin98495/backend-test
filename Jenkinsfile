@@ -70,7 +70,7 @@ stages{
                         // sh 'docker tag backend-test localhost:8081/backend-test-robinson'
 
                         sh 'docker build -t backend-devops .'
-                        sh 'docker tag backend-test:latest localhost:8082/backend-devops:latest'
+                        sh 'docker tag backend-devops:latest localhost:8082/backend-devops:latest'
                         sh 'docker push localhost:8082/backend-devops:latest'
                     }
                 }                
